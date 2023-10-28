@@ -4,6 +4,9 @@ class MentalState
     def auditable?
       # true if the external service is online, otherwise false
     end
+    def auditable?(no_mental_state)
+      #do nothing :)
+    end
     def audit!
       # Could fail if external service is offline
     end
@@ -13,19 +16,21 @@ class MentalState
   end
   
   def audit_sanity(bedtime_mental_state)
-    return 0 unless bedtime_mental_state.auditable?
-    if bedtime_mental_state.audit!.ok?
-      MorningMentalState.new(:ok)
-    else 
-      MorningMentalState.new(:not_ok)
+    if bedtime_mental_state.auditable?
+      if bedtime_mental_state.audit!.ok?
+        MorningMentalState.new(:ok)
+      else 
+        MorningMentalState.new(:not_ok)
+      end
     end
   end
-  
-  if audit_sanity(bedtime_mental_state) == 0
-    puts "error"
-  else
-    new_state = audit_sanity(bedtime_mental_state)
+
+  begin
+  new_state = audit_sanity(bedtime_mental_state)
+  rescue NoValidMentalState
+    puts ("No valid bedtime mental state")
   end
+    
   
   
   
@@ -38,15 +43,20 @@ class MentalState
   class MorningMentalState < MentalState ; end
   
   def audit_sanity(bedtime_mental_state)
-    return nil unless bedtime_mental_state.auditable?
-    if bedtime_mental_state.audit!.ok?
-      MorningMentalState.new(:ok)
-    else 
-      MorningMentalState.new(:not_ok)
+    if bedtime_mental_state.auditable?
+      if bedtime_mental_state.audit!.ok?
+        MorningMentalState.new(:ok)
+      else 
+        MorningMentalState.new(:not_ok)
+      end
     end
   end
-  
+
+  begin
   new_state = audit_sanity(bedtime_mental_state)
+  rescue NoValidMentalState
+    puts ("No valid bedtime mental state")
+  end
   new_state.do_work
   
   
@@ -56,11 +66,21 @@ class MentalState
   
   require 'candy_service'
   
-  machine = CandyMachine.new
+  
+  machine = my_new_machine()
   machine.prepare
   
-  if machine.ready?
-    machine.make!
+  def my_new_machine(void):
+    CandyMachine.new
+  
+  def get_machine_status(my_machine)
+    my_machine.make  
+  
+  def start_machine(my_machine)
+    my_machine.start 
+
+  if get_machine_status(machine)
+    start_machine(machine)
   else
     puts "sadness"
   end
